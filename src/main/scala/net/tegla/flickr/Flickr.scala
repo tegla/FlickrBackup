@@ -2,6 +2,7 @@ package net.tegla.flickr
 
 import scala.util.Sorting
 import scala.xml.Elem
+import scala.xml.XML
 import java.security.MessageDigest
 import java.net.URL
 
@@ -63,9 +64,29 @@ final class Flickr(
 	}
 
 	def getFrob():String = {
-		val url = new java.net.URL( createURL("flickr.auth.getFrob", Map(), true))
-		println(url)
-		"foo"
+		val stream = transport.get(createURL("flickr.auth.getFrob", Map(), true))
+		val doc = XML.load(stream)
+		val frob = parseResponse(doc, "frob")
+		frob.text
+	}
+
+	def getLoginLink(frob:String, perms:String):String = {
+		val params = Map(
+			"api_key" -> api_key,
+			"frob" -> frob,
+			"perms" -> perms)
+		val signedParams = params.update("api_sig", sign(params))
+		val query = (for ( (key,value) <- signedParams) yield key + "=" + value).mkString("&")
+		"http://www.flickr.com/services/auth/?" + query
+	}
+
+	def getToken(frob:String) = {
+		val stream = transport.get(createURL("flickr.auth.getToken", 
+			Map("frob" -> Some(frob)), true))
+		val doc = XML.load(stream)
+		val auth = parseResponse(doc, "auth")
+		(auth \ "token") text
+
 	}
 }
 
@@ -74,10 +95,10 @@ object Flickr {
 		override def get(url:String) = new java.net.URL(url).openStream
 	}
 
-	def ProbaApp(token:Option[String]) = new Flickr(
+	def ProbaApp(auth_token:Option[String]) = new Flickr(
 		"3f85b72e715c123e97800aaa95d8b56e",
 		"2fd0efe09d4d3a6e",
-		token,
+		auth_token,
 		FlickrTransport)
 
 	def apply(api_key:String, secret:String) = new Flickr(api_key, secret, None, FlickrTransport)

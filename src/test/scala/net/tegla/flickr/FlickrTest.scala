@@ -7,9 +7,10 @@ import scala.xml.XML
 
 class FlickrTest extends FunSuite {
 
-	class MockTransport extends Transport {
+	class MockTransport(expected:String, result:String) extends Transport {
 		override def get(url:String):java.io.InputStream = {
-			null
+			url should be (expected)
+			new java.io.ByteArrayInputStream(result.getBytes("UTF-8"))
 		}
 	}
 
@@ -44,6 +45,41 @@ class FlickrTest extends FunSuite {
 			</rsp>""")
 		val frob = flickr.parseResponse(doc, "frob")
 		frob should be (<frob>72157622937385745-e9e798d6cd643682-520711</frob>)
+	}
+
+	test("login loop") {
+		val flickrAnon = new Flickr(
+			"3f85b72e715c123e97800aaa95d8b56e",
+			"2fd0efe09d4d3a6e",
+			None,
+			new MockTransport(
+				"http://api.flickr.com/services/rest/?method=flickr.auth.getFrob&api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=12d4c3ea32aafd1f8675bdf2c7f40fb8",
+				"""<?xml version="1.0" encoding="UTF-8"?>
+				<rsp stat="ok">
+					<frob>72157622939479697-6776e136f19598ce-971749</frob>
+				</rsp>"""))
+		val frob = flickrAnon.getFrob()
+		frob should be ("72157622939479697-6776e136f19598ce-971749")
+
+		val loginLink = flickrAnon.getLoginLink(frob, "read")
+		loginLink should be ("http://www.flickr.com/services/auth/?api_key=3f85b72e715c123e97800aaa95d8b56e&frob=72157622939479697-6776e136f19598ce-971749&perms=read&api_sig=59f46161a3eba13bf8344feef5d3b51c")
+
+		val flickrToken = new Flickr(
+			"3f85b72e715c123e97800aaa95d8b56e",
+			"2fd0efe09d4d3a6e",
+			None,
+			new MockTransport(
+				"http://api.flickr.com/services/rest/?method=flickr.auth.getToken&api_key=3f85b72e715c123e97800aaa95d8b56e&frob=72157622939479697-6776e136f19598ce-971749&api_sig=8be32660cd494178c79387b2d00cbc14",
+				"""<?xml version="1.0" encoding="UTF-8"?>
+				<rsp stat="ok">
+				<auth>
+				<token>72157622931806485-5285ff7f60695ef3</token>
+					<perms>read</perms>
+					<user fullname="" username="tegla" nsid="10686481@N00"></user>
+				</auth>
+				</rsp>"""))
+		val auth = flickrToken.getToken(frob)
+		auth should be ("72157622931806485-5285ff7f60695ef3")
 	}
 }
 
