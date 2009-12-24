@@ -30,18 +30,25 @@ final class Flickr(
 		md5.digest().map(0xff & _).map {"%02x".format(_)}.mkString("")
 	}
 
-	def createURL(	method:String,
+	def createURL0(	base:String,
 			params:Map[String, Option[String]],
 			needSignature:Boolean):String = {
-		val p = Map("method" -> method, "api_key" -> api_key) ++
+		val p = Map("api_key" -> api_key) ++
 			(for ( (key,option) <- params; value <- option ) yield key -> value)
 		val all = if (needSignature) {
 			p.update("api_sig", sign(p))
 		} else {
 			p
 		}
-		val query = (for ( (key,value) <- all) yield key + "=" + value).mkString("&")
-		"http://api.flickr.com/services/rest/?" + query
+		val pairs = all.toList.sort((a,b) => a._1 < b._1)
+		val query = (for ( (key,value) <- pairs) yield key + "=" + value).mkString("&")
+		"http://api.flickr.com/services/" + base + "/?" + query
+	}
+
+	def createURL(	method:String,
+			params:Map[String, Option[String]],
+			needSignature:Boolean):String = {
+		createURL0("rest", params.update("method", Some(method)), needSignature)
 	}
 
 	def parseResponse(doc:Elem, expected:String) = {
@@ -71,13 +78,7 @@ final class Flickr(
 	}
 
 	def getLoginLink(frob:String, perms:String):String = {
-		val params = Map(
-			"api_key" -> api_key,
-			"frob" -> frob,
-			"perms" -> perms)
-		val signedParams = params.update("api_sig", sign(params))
-		val query = (for ( (key,value) <- signedParams) yield key + "=" + value).mkString("&")
-		"http://www.flickr.com/services/auth/?" + query
+		createURL0("auth", Map("frob" -> Some(frob), "perms" -> Some(perms)), true)
 	}
 
 	def getToken(frob:String) = {
