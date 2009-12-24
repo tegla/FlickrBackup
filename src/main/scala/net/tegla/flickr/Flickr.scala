@@ -96,11 +96,14 @@ object Flickr {
 		override def get(url:String) = new java.net.URL(url).openStream
 	}
 
-	def ProbaApp(auth_token:Option[String]) = new Flickr(
-		"3f85b72e715c123e97800aaa95d8b56e",
-		"2fd0efe09d4d3a6e",
-		auth_token,
-		FlickrTransport)
+	def ProbaApp = {
+		val auth_token = System.getenv("FLICKR_AUTH_TOKEN")
+		new Flickr(
+			"3f85b72e715c123e97800aaa95d8b56e",
+			"2fd0efe09d4d3a6e",
+			if (auth_token == null) { None } else { Some(auth_token) },
+			FlickrTransport)
+	}
 
 	def apply(api_key:String, secret:String) = new Flickr(api_key, secret, None, FlickrTransport)
 	def apply(api_key:String, secret:String, token:String) = new Flickr(api_key, secret, Some(token), FlickrTransport)
