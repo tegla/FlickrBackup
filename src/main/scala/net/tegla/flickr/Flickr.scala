@@ -13,7 +13,7 @@ trait Transport {
 final class Flickr(
 		val api_key:String,
 		val secret:String,
-		val token:Option[String],
+		val auth_token:Option[String],
 		val transport:Transport) 
 {
 	def sign(params:Map[String,String]):String = {
@@ -34,13 +34,14 @@ final class Flickr(
 			params:Map[String, Option[String]],
 			needSignature:Boolean):String = {
 		val p = Map("api_key" -> api_key) ++
-			(for ( (key,option) <- params; value <- option ) yield key -> value)
+			(for ( (key,option) <- params; value <- option ) yield key -> value) ++
+			auth_token.map( "auth_token" -> _ )
 		val all = if (needSignature) {
 			p.update("api_sig", sign(p))
 		} else {
 			p
 		}
-		val pairs = all.toList.sort((a,b) => a._1 < b._1)
+		val pairs = all.toList.sort((a,b) => a._1 < b._1) // make it deterministic, to ease testing
 		val query = (for ( (key,value) <- pairs) yield key + "=" + value).mkString("&")
 		"http://api.flickr.com/services/" + base + "/?" + query
 	}
@@ -88,6 +89,14 @@ final class Flickr(
 		val auth = parseResponse(doc, "auth")
 		(auth \ "token") text
 
+	}
+
+	def getPhotoSets(user_id:Option[String]) = {
+		val stream = transport.get(createURL("flickr.photosets.getList",
+			Map("user_id" -> user_id), true))
+		val doc = XML.load(stream)
+		val photosets = parseResponse(doc, "photosets")
+		photosets
 	}
 }
 
