@@ -48,6 +48,7 @@ class FlickrTest extends FunSuite {
 	}
 
 	test("login loop") {
+		// this is copied from real life
 		val flickrAnon = new Flickr(
 			"3f85b72e715c123e97800aaa95d8b56e",
 			"2fd0efe09d4d3a6e",
