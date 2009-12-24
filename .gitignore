@@ -1,0 +1,5 @@
+target/
+lib_managed
+project/build/target
+*.swp
+project/boot
