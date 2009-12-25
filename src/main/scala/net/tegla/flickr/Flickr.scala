@@ -173,6 +173,13 @@ final class Flickr(
 			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
 			def result(e:Elem) = new Photosets(e)
 		}
+		object getPhotos extends Method[Photoset] {
+			def apply(photoset_id:Long, per_page:Int, page:Int) = call(Map(
+				"photoset_id" -> Some(photoset_id.toString),
+				"per_page" -> Some(per_page.toString),
+				"page" -> Some(page.toString)))
+			def result(e:Elem) = new Photoset(e)
+		}
 	}
 }
 
