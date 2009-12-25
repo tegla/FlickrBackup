@@ -23,6 +23,17 @@ trait XMLResponseWrapper {
 	override def toString = elem.toString
 }
 
+trait WithChildren[CHILD] extends Seq[CHILD] with XMLResponseWrapper {
+	protected def createChild(elem:Elem):CHILD
+	protected def childElemName:String
+
+	// is there a SeqProxy trait?
+	lazy val seq = (elem \ childElemName).map( n => createChild(n.asInstanceOf[Elem]) )
+	def length = seq.length
+	def elements = seq.elements
+	def apply(i:Int) = seq.apply(i)
+}
+
 final class Photoset(val elem:Elem) extends XMLResponseWrapper {
 	def videos = attrib("videos").toInt
 	def photos = attrib("photos").toInt
@@ -42,14 +53,10 @@ final class Photoset(val elem:Elem) extends XMLResponseWrapper {
 	}
 }
 
-final class Photosets(val elem:Elem) extends Seq[Photoset] with XMLResponseWrapper {
+final class Photosets(val elem:Elem) extends WithChildren[Photoset] {
 	def cancreate = attrib("cancreate") == "1"
-	
-	// is there a SeqProxy trait?
-	lazy val seq = (elem \ "photoset").map( n=> new Photoset(n.asInstanceOf[Elem]) )
-	def length = seq.length
-	def elements = seq.elements
-	def apply(i:Int) = seq.apply(i)
+	override def createChild(elem:Elem) = new Photoset(elem)
+	override def childElemName = "photoset"
 }
 
 final class User(val elem:Elem) extends XMLResponseWrapper {
@@ -80,7 +87,7 @@ final class Photo(val elem:Elem) extends XMLResponseWrapper {
 	}
 }
 
-final class PhotosetList(val elem:Elem) extends Seq[Photo] with XMLResponseWrapper {
+final class PhotosetList(val elem:Elem) extends WithChildren[Photo] {
 	override def label = "photoset"
 	def total = attrib("total")
 	def pages = attrib("pages")
@@ -90,11 +97,8 @@ final class PhotosetList(val elem:Elem) extends Seq[Photo] with XMLResponseWrapp
 	def primary = attrib("primary")
 	def id = attrib("id").toLong
 
-	// is there a SeqProxy trait?
-	lazy val seq = (elem \ "photo").map( n=> new Photo(n.asInstanceOf[Elem]) )
-	def length = seq.length
-	def elements = seq.elements
-	def apply(i:Int) = seq.apply(i)
+	override def createChild(elem:Elem) = new Photo(elem)
+	override def childElemName = "photo"
 }
 
 final class Flickr(
