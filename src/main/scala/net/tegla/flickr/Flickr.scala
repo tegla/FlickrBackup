@@ -42,7 +42,7 @@ final class Photoset(val elem:Elem) extends XMLResponseWrapper {
 	}
 }
 
-final class Photosets(val elem:Elem) extends XMLResponseWrapper with Seq[Photoset] {
+final class Photosets(val elem:Elem) extends Seq[Photoset] with XMLResponseWrapper {
 	def cancreate = attrib("cancreate") == "1"
 	
 	// is there a SeqProxy trait?
@@ -50,7 +50,6 @@ final class Photosets(val elem:Elem) extends XMLResponseWrapper with Seq[Photose
 	def length = seq.length
 	def elements = seq.elements
 	def apply(i:Int) = seq.apply(i)
-	override def toString = elem.toString // we don't want the Seq toString
 }
 
 final class User(val elem:Elem) extends XMLResponseWrapper {
@@ -81,7 +80,7 @@ final class Photo(val elem:Elem) extends XMLResponseWrapper {
 	}
 }
 
-final class PhotosetList(val elem:Elem) extends XMLResponseWrapper with Seq[Photo] {
+final class PhotosetList(val elem:Elem) extends Seq[Photo] with XMLResponseWrapper {
 	override def label = "photoset"
 	def total = attrib("total")
 	def pages = attrib("pages")
@@ -96,7 +95,6 @@ final class PhotosetList(val elem:Elem) extends XMLResponseWrapper with Seq[Phot
 	def length = seq.length
 	def elements = seq.elements
 	def apply(i:Int) = seq.apply(i)
-	override def toString = elem.toString // we don't want the Seq toString
 }
 
 final class Flickr(
