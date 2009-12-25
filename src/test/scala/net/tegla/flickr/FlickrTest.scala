@@ -32,7 +32,7 @@ class FlickrTest extends FunSuite {
         			<err code="96" msg="Invalid signature"/>
 			</rsp>""")
 		val exception = intercept[RuntimeException] {
-			flickr.parseResponse(doc, "frob")
+			flickr.parseResponse(doc)
 		}
 		exception should have ('message ("(96,Invalid signature)"))
 	}
@@ -45,7 +45,7 @@ class FlickrTest extends FunSuite {
 			<rsp stat="ok">
 				<frob>72157622937385745-e9e798d6cd643682-520711</frob>
 			</rsp>""")
-		val frob = flickr.parseResponse(doc, "frob")
+		val frob = flickr.parseResponse(doc)
 		frob should be (<frob>72157622937385745-e9e798d6cd643682-520711</frob>)
 	}
 

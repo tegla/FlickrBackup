@@ -11,13 +11,14 @@ trait Transport {
 	def get(url:String):java.io.InputStream
 }
 
-abstract class XMLResponseWrapper(val node:Node) {
-	protected def attrib(name:String) = (node \ ("@" + name)) text
-	protected def child(name:String) = (node \ name) text
-	override def toString = node.toString
+abstract class XMLResponseWrapper(val elem:Elem, val label:String) {
+	assert(elem.label == label)
+	protected def attrib(name:String) = (elem \ ("@" + name)) text
+	protected def child(name:String) = (elem \ name) text
+	override def toString = elem.toString
 }
 
-final class Photoset(node:Node) extends XMLResponseWrapper(node) {
+final class Photoset(elem:Elem) extends XMLResponseWrapper(elem, "photoset") {
 	def videos = attrib("videos").toInt
 	def photos = attrib("photos").toInt
 	def farm = attrib("farm").toInt
@@ -36,27 +37,27 @@ final class Photoset(node:Node) extends XMLResponseWrapper(node) {
 	}
 }
 
-final class Photosets(node:Node) extends XMLResponseWrapper(node) with Seq[Photoset] {
+final class Photosets(elem:Elem) extends XMLResponseWrapper(elem, "photosets") with Seq[Photoset] {
 	def cancreate = attrib("cancreate") == "1"
 	
 	// is there a SeqProxy trait?
-	lazy val seq = (node \ "photoset").map( new Photoset(_) )
+	lazy val seq = (elem \ "photoset").map( n=> new Photoset(n.asInstanceOf[Elem]) )
 	def length = seq.length
 	def elements = seq.elements
 	def apply(i:Int) = seq.apply(i)
-	override def toString = node.toString // we don't want the Seq toString
+	override def toString = elem.toString // we don't want the Seq toString
 }
 
-final class User(node:Node) extends XMLResponseWrapper(node) {
+final class User(elem:Elem) extends XMLResponseWrapper(elem, "user") {
 	def nsid = attrib("nsid")
 	def username = attrib("username")
 	def fullname = attrib("fullname")
 }
 
-final class Auth(node:Node) extends XMLResponseWrapper(node) {
+final class Auth(elem:Elem) extends XMLResponseWrapper(elem, "auth") {
 	def token = child("token")
 	def perms = child("perms")
-	def user = new User((node \ "user").first)
+	def user = new User((elem \ "user").first.asInstanceOf[Elem])
 }
 
 final class Flickr(
@@ -101,12 +102,14 @@ final class Flickr(
 		createURL0("rest", params.update("method", Some(method)), needSignature)
 	}
 
-	def parseResponse(doc:Elem, expected:String) = {
+	def parseResponse(doc:Elem):Elem = {
 		if (doc.label != "rsp") throw new RuntimeException("unknown: " + doc.label)
 		val sub = (doc \ "@stat").text match {
 			case "ok" => {
-				val sub = (doc \ expected).firstOption
-				sub.getOrElse(throw new RuntimeException("not found: " + expected))
+				val subs = for (child <- doc.child
+						if child.isInstanceOf[Elem]) yield child.asInstanceOf[Elem]
+				if (subs.length != 1) throw new RuntimeException("too many" + subs.length)
+				subs.first 
 			}
 			case "fail" => {
 				val x = (doc \ "err").firstOption.map(d =>
@@ -134,11 +137,11 @@ final class Flickr(
 			a.mkString(".")
 		}
 		val needApiSig = true
-		protected def result(n:Node):T
+		protected def result(elem:Elem):T
 		protected def call(params:Map[String,Option[String]]):T = {
 			val stream = transport.get(createURL(method, params, needApiSig))
 			val doc = XML.load(stream)
-			val subNode = parseResponse(doc, returnName)
+			val subNode = parseResponse(doc)
 			result(subNode)
 		}
 	}
@@ -146,15 +149,15 @@ final class Flickr(
 	object auth {
 		object getFrob extends Method[String]("frob") {
 			def apply() = call(Map())
-			def result(n:Node) = n text
+			def result(e:Elem) = e text
 		}
 		object getToken extends Method[Auth]("auth") {
 			def apply(frob:String) = call(Map("frob" -> Some(frob)))
-			def result(n:Node) = new Auth(n)
+			def result(e:Elem) = new Auth(e)
 		}
 		object checkToken extends Method[Auth]("auth") {
 			def apply(auth_token:String) = call(Map("auth_token" -> Some(auth_token)))
-			def result(n:Node) = new Auth(n)
+			def result(e:Elem) = new Auth(e)
 		}
 	}
 
@@ -163,7 +166,7 @@ final class Flickr(
 			def apply() = call(Map())
 			def apply(user_id:String) = call(Map("user_id" -> Some(user_id)))
 			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
-			def result(n:Node) = new Photosets(n)
+			def result(e:Elem) = new Photosets(e)
 		}
 	}
 }
