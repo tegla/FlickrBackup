@@ -128,7 +128,7 @@ final class Flickr(
 	}
 
 	// This subclass system ensures that we look very like the official Flickr API
-	abstract class Method[T](val returnName:String) {
+	abstract class Method[T] {
 		val method = {
 			// This is a bit of black magick, totally unportable.
 			// Might remove it totally, when I'm shamed enough
@@ -147,22 +147,22 @@ final class Flickr(
 	}
 
 	object auth {
-		object getFrob extends Method[String]("frob") {
+		object getFrob extends Method[String] {
 			def apply() = call(Map())
 			def result(e:Elem) = e text
 		}
-		object getToken extends Method[Auth]("auth") {
+		object getToken extends Method[Auth] {
 			def apply(frob:String) = call(Map("frob" -> Some(frob)))
 			def result(e:Elem) = new Auth(e)
 		}
-		object checkToken extends Method[Auth]("auth") {
+		object checkToken extends Method[Auth] {
 			def apply(auth_token:String) = call(Map("auth_token" -> Some(auth_token)))
 			def result(e:Elem) = new Auth(e)
 		}
 	}
 
 	object photosets {
-		object getList extends Method[Photosets]("photosets") {
+		object getList extends Method[Photosets] {
 			def apply() = call(Map())
 			def apply(user_id:String) = call(Map("user_id" -> Some(user_id)))
 			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
