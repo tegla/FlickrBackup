@@ -80,5 +80,17 @@ class FlickrTest extends FunSuite {
 		val auth = flickr.auth.getToken(frob)
 		auth should have ('token ("72157622931806485-5285ff7f60695ef3"))
 	}
+
+	test("Photo comparison works") {
+		val photo1 = new Photo(XML.loadString("""<photo id="1234"/>"""))
+		val photo2 = new Photo(XML.loadString("""<photo id="1234"/>"""))
+		val photo3 = new Photo(XML.loadString("""<photo id="12345"/>"""))
+
+		photo1 should have ('hashCode (photo2.hashCode))
+		photo1 should not have ('hashCode (photo3.hashCode))
+
+		photo1 should equal (photo2)
+		photo1 should not equal (photo3)
+	}
 }
 

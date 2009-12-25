@@ -34,7 +34,19 @@ trait WithChildren[CHILD] extends Seq[CHILD] with XMLResponseWrapper {
 	def apply(i:Int) = seq.apply(i)
 }
 
-final class Photoset(val elem:Elem) extends XMLResponseWrapper {
+trait HasId {
+	def id:Long
+}
+
+trait CompareId[T <: HasId] extends HasId {
+	override def hashCode = id.hashCode
+	override def equals(other:Any) = other match {
+		case that:T => that.id == id
+		case _ => false
+	}
+}
+
+final class Photoset(val elem:Elem) extends XMLResponseWrapper with CompareId[Photoset] {
 	def videos = attrib("videos").toInt
 	def photos = attrib("photos").toInt
 	def farm = attrib("farm").toInt
@@ -44,13 +56,6 @@ final class Photoset(val elem:Elem) extends XMLResponseWrapper {
 	def id = attrib("id").toLong
 	def title = child("title")
 	def description = child("description")
-
-	// AnyRef overrides
-	override def hashCode = id.hashCode
-	override def equals(that:Any) = that match {
-		case photoset:Photoset => photoset.id == id
-		case _ => false
-	}
 }
 
 final class Photosets(val elem:Elem) extends WithChildren[Photoset] {
@@ -71,20 +76,13 @@ final class Auth(val elem:Elem) extends XMLResponseWrapper {
 	def user = new User((elem \ "user").first.asInstanceOf[Elem])
 }
 
-final class Photo(val elem:Elem) extends XMLResponseWrapper {
+final class Photo(val elem:Elem) extends XMLResponseWrapper with CompareId[Photo] {
 	def isprimary = attrib("isprimary") == "1"
 	def title = attrib("title")
 	def farm = attrib("farm").toInt
 	def server = attrib("server").toInt
 	def secret = attrib("secret")
 	def id = attrib("id").toLong
-
-	// AnyRef overrides
-	override def hashCode = id.hashCode
-	override def equals(that:Any) = that match {
-		case photo:Photo => photo.id == id
-		case _ => false
-	}
 }
 
 final class PhotosetList(val elem:Elem) extends WithChildren[Photo] {
