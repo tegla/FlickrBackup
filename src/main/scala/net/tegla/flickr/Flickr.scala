@@ -107,33 +107,43 @@ final class Flickr(
 
 	}
 
-	def getFrob():String = {
-		val stream = transport.get(createURL("flickr.auth.getFrob", Map(), true))
-		val doc = XML.load(stream)
-		val frob = parseResponse(doc, "frob")
-		frob.text
-	}
-
 	def getLoginLink(frob:String, perms:String):String = {
 		createURL0("auth", Map("frob" -> Some(frob), "perms" -> Some(perms)), true)
 	}
 
-	def getToken(frob:String) = {
-		val stream = transport.get(createURL("flickr.auth.getToken", 
-			Map("frob" -> Some(frob)), true))
-		val doc = XML.load(stream)
-		val auth = parseResponse(doc, "auth")
-		(auth \ "token") text
-
+	// This subclass system ensures that we look very like the official Flickr API
+	class MethodGroup(val groupName:String) {
+		abstract class Method[T](val methodName:String, val returnName:String) {
+			val needApiSig = true
+			protected def result(n:Node):T
+			protected def call(params:Map[String,Option[String]]):T = {
+				val method = "flickr." + groupName + "." + methodName
+				val stream = transport.get(createURL(method, params, needApiSig))
+				val doc = XML.load(stream)
+				val subNode = parseResponse(doc, returnName)
+				result(subNode)
+			}
+		}
 	}
 
-	def getPhotoSets(user_id:Option[String]) = {
-		val stream = transport.get(createURL("flickr.photosets.getList",
-			Map("user_id" -> user_id), true))
-		val doc = XML.load(stream)
-		val photosets = parseResponse(doc, "photosets")
-		new Photosets(photosets)
+	object auth extends MethodGroup("auth") {
+		object getFrob extends Method[String]("getFrob", "frob") {
+			def apply() = call(Map())
+			def result(n:Node) = n text
+		}
+		object getToken extends Method[String]("getToken", "auth") {
+			def apply(frob:String) = call(Map("frob" -> Some(frob)))
+			def result(n:Node) = n \ "token" text
+		}
 	}
+
+	object photosets extends MethodGroup("photosets") {
+		object getList extends Method[Photosets]("getList", "photosets") {
+			def apply(user_id:Option[String]) = call(Map("user_id" -> user_id))
+			def result(n:Node) = new Photosets(n)
+		}
+	}
+
 }
 
 object Flickr {

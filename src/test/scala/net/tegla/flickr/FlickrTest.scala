@@ -59,7 +59,7 @@ class FlickrTest extends FunSuite {
 				<rsp stat="ok">
 					<frob>72157622939479697-6776e136f19598ce-971749</frob>
 				</rsp>"""))
-		val frob = flickrAnon.getFrob()
+		val frob = flickrAnon.auth.getFrob()
 		frob should be ("72157622939479697-6776e136f19598ce-971749")
 
 		val loginLink = flickrAnon.getLoginLink(frob, "read")
@@ -79,7 +79,7 @@ class FlickrTest extends FunSuite {
 					<user fullname="" username="tegla" nsid="10686481@N00"></user>
 				</auth>
 				</rsp>"""))
-		val auth = flickrToken.getToken(frob)
+		val auth = flickrToken.auth.getToken(frob)
 		auth should be ("72157622931806485-5285ff7f60695ef3")
 	}
 }
