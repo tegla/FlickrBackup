@@ -5,6 +5,9 @@ import scala.xml.XML
 object HelloWorld { 
 	def main(args: Array[String]) {
 		val flickr = Flickr.ProbaApp
-		println(flickr.getPhotoSets(None))
+		val photosets = flickr.getPhotoSets(None)
+		for(photoset <- photosets) {
+			println(photoset.id + ": " + photoset.title)
+		}
 	}
 }

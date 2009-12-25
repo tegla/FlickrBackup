@@ -2,12 +2,48 @@ package net.tegla.flickr
 
 import scala.util.Sorting
 import scala.xml.Elem
+import scala.xml.Node
 import scala.xml.XML
 import java.security.MessageDigest
 import java.net.URL
 
 trait Transport {
 	def get(url:String):java.io.InputStream
+}
+
+abstract class XMLResponseWrapper(val node:Node) {
+	protected def attrib(name:String) = (node \ ("@" + name)) text
+	protected def child(name:String) = (node \ name) text
+}
+
+final class Photoset(node:Node) extends XMLResponseWrapper(node) {
+	def videos = attrib("videos").toInt
+	def photos = attrib("photos").toInt
+	def farm = attrib("farm").toInt
+	def server = attrib("server").toInt
+	def secret = attrib("secret")
+	def primary = attrib("primary")
+	def id = attrib("id").toLong
+	def title = child("title")
+	def description = child("description")
+
+	// AnyRef overrides
+	override def hashCode = id.hashCode
+	override def equals(that:Any) = that match {
+		case photoset:Photoset => photoset.id == id
+		case _ => false
+	}
+	override def toString = title
+}
+
+final class Photosets(node:Node) extends XMLResponseWrapper(node) with Seq[Photoset] {
+	def cancreate = attrib("cancreate") == "1"
+	
+	// is there a SeqProxy trait?
+	lazy val seq = (node \ "photoset").map( new Photoset(_) )
+	def length = seq.length
+	def elements = seq.elements
+	def apply(i:Int) = seq.apply(i)
 }
 
 final class Flickr(
@@ -96,7 +132,7 @@ final class Flickr(
 			Map("user_id" -> user_id), true))
 		val doc = XML.load(stream)
 		val photosets = parseResponse(doc, "photosets")
-		photosets
+		new Photosets(photosets)
 	}
 }
 
