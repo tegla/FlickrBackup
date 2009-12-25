@@ -11,18 +11,19 @@ trait Transport {
 	def get(url:String):java.io.InputStream
 }
 
-sealed abstract class XMLResponseWrapper(val elem:Elem) {
+sealed abstract class XMLResponseWrapper {
 	// every wrapper class name corresponds to one xml reply
 	// net.tegla.flickr.Photosets - <photosets/>
 	val label = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
 	assert(elem.label == label)
 
+	val elem:Elem
 	protected def attrib(name:String) = (elem \ ("@" + name)) text
 	protected def child(name:String) = (elem \ name) text
 	override def toString = elem.toString
 }
 
-final class Photoset(elem:Elem) extends XMLResponseWrapper(elem) {
+final class Photoset(val elem:Elem) extends XMLResponseWrapper {
 	def videos = attrib("videos").toInt
 	def photos = attrib("photos").toInt
 	def farm = attrib("farm").toInt
@@ -41,7 +42,7 @@ final class Photoset(elem:Elem) extends XMLResponseWrapper(elem) {
 	}
 }
 
-final class Photosets(elem:Elem) extends XMLResponseWrapper(elem) with Seq[Photoset] {
+final class Photosets(val elem:Elem) extends XMLResponseWrapper with Seq[Photoset] {
 	def cancreate = attrib("cancreate") == "1"
 	
 	// is there a SeqProxy trait?
@@ -52,13 +53,13 @@ final class Photosets(elem:Elem) extends XMLResponseWrapper(elem) with Seq[Photo
 	override def toString = elem.toString // we don't want the Seq toString
 }
 
-final class User(elem:Elem) extends XMLResponseWrapper(elem) {
+final class User(val elem:Elem) extends XMLResponseWrapper {
 	def nsid = attrib("nsid")
 	def username = attrib("username")
 	def fullname = attrib("fullname")
 }
 
-final class Auth(elem:Elem) extends XMLResponseWrapper(elem) {
+final class Auth(val elem:Elem) extends XMLResponseWrapper {
 	def token = child("token")
 	def perms = child("perms")
 	def user = new User((elem \ "user").first.asInstanceOf[Elem])
