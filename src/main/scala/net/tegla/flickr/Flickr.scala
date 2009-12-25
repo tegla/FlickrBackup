@@ -11,7 +11,7 @@ trait Transport {
 	def get(url:String):java.io.InputStream
 }
 
-sealed abstract class XMLResponseWrapper {
+trait XMLResponseWrapper {
 	// every wrapper class name corresponds to one xml reply
 	// net.tegla.flickr.Photosets - <photosets/>
 	val label = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
