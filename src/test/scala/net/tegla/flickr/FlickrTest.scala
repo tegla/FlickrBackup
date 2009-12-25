@@ -7,10 +7,10 @@ import scala.xml.XML
 
 class FlickrTest extends FunSuite {
 
-	class MockTransport(expected:String, result:String) extends Transport {
+	class MockTransport(worker:PartialFunction[String, String]) extends Transport {
 		override def get(url:String):java.io.InputStream = {
-			url should be (expected)
-			new java.io.ByteArrayInputStream(result.getBytes("UTF-8"))
+			if (!worker.isDefinedAt(url)) { fail(url) }
+			new java.io.ByteArrayInputStream(worker(url).getBytes("UTF-8"))
 		}
 	}
 
@@ -49,28 +49,17 @@ class FlickrTest extends FunSuite {
 
 	test("login loop") {
 		// this is copied from real life
-		val flickrAnon = new Flickr(
+		val flickr = new Flickr(
 			"3f85b72e715c123e97800aaa95d8b56e",
 			"2fd0efe09d4d3a6e",
 			None,
-			new MockTransport(
-				"http://api.flickr.com/services/rest/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=12d4c3ea32aafd1f8675bdf2c7f40fb8&method=flickr.auth.getFrob",
+			new MockTransport(Map(
+				"http://api.flickr.com/services/rest/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=12d4c3ea32aafd1f8675bdf2c7f40fb8&method=flickr.auth.getFrob"->
 				"""<?xml version="1.0" encoding="UTF-8"?>
 				<rsp stat="ok">
 					<frob>72157622939479697-6776e136f19598ce-971749</frob>
-				</rsp>"""))
-		val frob = flickrAnon.auth.getFrob()
-		frob should be ("72157622939479697-6776e136f19598ce-971749")
-
-		val loginLink = flickrAnon.getLoginLink(frob, "read")
-		loginLink should be ("http://api.flickr.com/services/auth/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=59f46161a3eba13bf8344feef5d3b51c&frob=72157622939479697-6776e136f19598ce-971749&perms=read")
-
-		val flickrToken = new Flickr(
-			"3f85b72e715c123e97800aaa95d8b56e",
-			"2fd0efe09d4d3a6e",
-			None,
-			new MockTransport(
-				"http://api.flickr.com/services/rest/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=8be32660cd494178c79387b2d00cbc14&frob=72157622939479697-6776e136f19598ce-971749&method=flickr.auth.getToken",
+				</rsp>""",
+				"http://api.flickr.com/services/rest/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=8be32660cd494178c79387b2d00cbc14&frob=72157622939479697-6776e136f19598ce-971749&method=flickr.auth.getToken" ->
 				"""<?xml version="1.0" encoding="UTF-8"?>
 				<rsp stat="ok">
 				<auth>
@@ -78,8 +67,15 @@ class FlickrTest extends FunSuite {
 					<perms>read</perms>
 					<user fullname="" username="tegla" nsid="10686481@N00"></user>
 				</auth>
-				</rsp>"""))
-		val auth = flickrToken.auth.getToken(frob)
+				</rsp>""")))
+		
+		val frob = flickr.auth.getFrob()
+		frob should be ("72157622939479697-6776e136f19598ce-971749")
+
+		val loginLink = flickr.getLoginLink(frob, "read")
+		loginLink should be ("http://api.flickr.com/services/auth/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=59f46161a3eba13bf8344feef5d3b51c&frob=72157622939479697-6776e136f19598ce-971749&perms=read")
+
+		val auth = flickr.auth.getToken(frob)
 		auth should have ('token ("72157622931806485-5285ff7f60695ef3"))
 	}
 }
