@@ -14,7 +14,7 @@ trait Transport {
 trait XMLResponseWrapper {
 	// every wrapper class name corresponds to one xml reply
 	// net.tegla.flickr.Photosets - <photosets/>
-	val label = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
+	def label = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
 	assert(elem.label == label)
 
 	val elem:Elem
@@ -63,6 +63,40 @@ final class Auth(val elem:Elem) extends XMLResponseWrapper {
 	def token = child("token")
 	def perms = child("perms")
 	def user = new User((elem \ "user").first.asInstanceOf[Elem])
+}
+
+final class Photo(val elem:Elem) extends XMLResponseWrapper {
+	def isprimary = attrib("isprimary") == "1"
+	def title = attrib("title")
+	def farm = attrib("farm").toInt
+	def server = attrib("server").toInt
+	def secret = attrib("secret")
+	def id = attrib("id").toLong
+
+	// AnyRef overrides
+	override def hashCode = id.hashCode
+	override def equals(that:Any) = that match {
+		case photo:Photo => photo.id == id
+		case _ => false
+	}
+}
+
+final class PhotosetList(val elem:Elem) extends XMLResponseWrapper with Seq[Photo] {
+	override def label = "photoset"
+	def total = attrib("total")
+	def pages = attrib("pages")
+	def per_page = attrib("per_page")
+	def ownername = attrib("ownername")
+	def owner = attrib("owner")
+	def primary = attrib("primary")
+	def id = attrib("id").toLong
+
+	// is there a SeqProxy trait?
+	lazy val seq = (elem \ "photo").map( n=> new Photo(n.asInstanceOf[Elem]) )
+	def length = seq.length
+	def elements = seq.elements
+	def apply(i:Int) = seq.apply(i)
+	override def toString = elem.toString // we don't want the Seq toString
 }
 
 final class Flickr(
@@ -173,12 +207,12 @@ final class Flickr(
 			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
 			def result(e:Elem) = new Photosets(e)
 		}
-		object getPhotos extends Method[Photoset] {
+		object getPhotos extends Method[PhotosetList] {
 			def apply(photoset_id:Long, per_page:Int, page:Int) = call(Map(
 				"photoset_id" -> Some(photoset_id.toString),
 				"per_page" -> Some(per_page.toString),
 				"page" -> Some(page.toString)))
-			def result(e:Elem) = new Photoset(e)
+			def result(e:Elem) = new PhotosetList(e)
 		}
 	}
 }
