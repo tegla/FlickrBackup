@@ -125,37 +125,41 @@ final class Flickr(
 	}
 
 	// This subclass system ensures that we look very like the official Flickr API
-	class MethodGroup(val groupName:String) {
-		abstract class Method[T](val methodName:String, val returnName:String) {
-			val needApiSig = true
-			protected def result(n:Node):T
-			protected def call(params:Map[String,Option[String]]):T = {
-				val method = "flickr." + groupName + "." + methodName
-				val stream = transport.get(createURL(method, params, needApiSig))
-				val doc = XML.load(stream)
-				val subNode = parseResponse(doc, returnName)
-				result(subNode)
-			}
+	abstract class Method[T](val returnName:String) {
+		val method = {
+			// This is a bit of black magick, totally unportable.
+			// Might remove it totally, when I'm shamed enough
+			val a = this.getClass.getName.split('$')
+			a.update(0, "flickr")
+			a.mkString(".")
+		}
+		val needApiSig = true
+		protected def result(n:Node):T
+		protected def call(params:Map[String,Option[String]]):T = {
+			val stream = transport.get(createURL(method, params, needApiSig))
+			val doc = XML.load(stream)
+			val subNode = parseResponse(doc, returnName)
+			result(subNode)
 		}
 	}
 
-	object auth extends MethodGroup("auth") {
-		object getFrob extends Method[String]("getFrob", "frob") {
+	object auth {
+		object getFrob extends Method[String]("frob") {
 			def apply() = call(Map())
 			def result(n:Node) = n text
 		}
-		object getToken extends Method[Auth]("getToken", "auth") {
+		object getToken extends Method[Auth]("auth") {
 			def apply(frob:String) = call(Map("frob" -> Some(frob)))
 			def result(n:Node) = new Auth(n)
 		}
-		object checkToken extends Method[Auth]("checkToken", "auth") {
+		object checkToken extends Method[Auth]("auth") {
 			def apply(auth_token:String) = call(Map("auth_token" -> Some(auth_token)))
 			def result(n:Node) = new Auth(n)
 		}
 	}
 
-	object photosets extends MethodGroup("photosets") {
-		object getList extends Method[Photosets]("getList", "photosets") {
+	object photosets {
+		object getList extends Method[Photosets]("photosets") {
 			def apply() = call(Map())
 			def apply(user_id:String) = call(Map("user_id" -> Some(user_id)))
 			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
