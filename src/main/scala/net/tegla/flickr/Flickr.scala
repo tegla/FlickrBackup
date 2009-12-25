@@ -14,6 +14,7 @@ trait Transport {
 abstract class XMLResponseWrapper(val node:Node) {
 	protected def attrib(name:String) = (node \ ("@" + name)) text
 	protected def child(name:String) = (node \ name) text
+	override def toString = node.toString
 }
 
 final class Photoset(node:Node) extends XMLResponseWrapper(node) {
@@ -33,7 +34,6 @@ final class Photoset(node:Node) extends XMLResponseWrapper(node) {
 		case photoset:Photoset => photoset.id == id
 		case _ => false
 	}
-	override def toString = title
 }
 
 final class Photosets(node:Node) extends XMLResponseWrapper(node) with Seq[Photoset] {
@@ -44,6 +44,19 @@ final class Photosets(node:Node) extends XMLResponseWrapper(node) with Seq[Photo
 	def length = seq.length
 	def elements = seq.elements
 	def apply(i:Int) = seq.apply(i)
+	override def toString = node.toString // we don't want the Seq toString
+}
+
+final class User(node:Node) extends XMLResponseWrapper(node) {
+	def nsid = attrib("nsid")
+	def username = attrib("username")
+	def fullname = attrib("fullname")
+}
+
+final class Auth(node:Node) extends XMLResponseWrapper(node) {
+	def token = child("token")
+	def perms = child("perms")
+	def user = new User((node \ "user").first)
 }
 
 final class Flickr(
@@ -131,19 +144,24 @@ final class Flickr(
 			def apply() = call(Map())
 			def result(n:Node) = n text
 		}
-		object getToken extends Method[String]("getToken", "auth") {
+		object getToken extends Method[Auth]("getToken", "auth") {
 			def apply(frob:String) = call(Map("frob" -> Some(frob)))
-			def result(n:Node) = n \ "token" text
+			def result(n:Node) = new Auth(n)
+		}
+		object checkToken extends Method[Auth]("checkToken", "auth") {
+			def apply(auth_token:String) = call(Map("auth_token" -> Some(auth_token)))
+			def result(n:Node) = new Auth(n)
 		}
 	}
 
 	object photosets extends MethodGroup("photosets") {
 		object getList extends Method[Photosets]("getList", "photosets") {
-			def apply(user_id:Option[String]) = call(Map("user_id" -> user_id))
+			def apply() = call(Map())
+			def apply(user_id:String) = call(Map("user_id" -> Some(user_id)))
+			def apply(user:User) = call(Map("user_id" -> Some(user.nsid)))
 			def result(n:Node) = new Photosets(n)
 		}
 	}
-
 }
 
 object Flickr {

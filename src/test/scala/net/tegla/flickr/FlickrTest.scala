@@ -80,7 +80,7 @@ class FlickrTest extends FunSuite {
 				</auth>
 				</rsp>"""))
 		val auth = flickrToken.auth.getToken(frob)
-		auth should be ("72157622931806485-5285ff7f60695ef3")
+		auth should have ('token ("72157622931806485-5285ff7f60695ef3"))
 	}
 }
 

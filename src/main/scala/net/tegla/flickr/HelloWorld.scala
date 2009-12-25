@@ -5,9 +5,9 @@ import scala.xml.XML
 object HelloWorld { 
 	def main(args: Array[String]) {
 		val flickr = Flickr.ProbaApp
-		val photosets = flickr.photosets.getList(None)
-		for(photoset <- photosets) {
-			println(photoset.id + ": " + photoset.title)
-		}
+		val auth = flickr.auth.checkToken(System.getProperty("FLICKR_AUTH_TOKEN"))
+		val photosets = flickr.photosets.getList(auth.user)
+		println(photosets)
+		println(photosets.length)
 	}
 }
