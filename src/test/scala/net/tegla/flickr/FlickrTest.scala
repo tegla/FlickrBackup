@@ -7,10 +7,12 @@ import scala.xml.XML
 
 class FlickrTest extends FunSuite {
 
-	class MockTransport(worker:PartialFunction[String, String]) extends Transport {
-		override def get(url:String):java.io.InputStream = {
-			if (!worker.isDefinedAt(url)) { fail(url) }
-			new java.io.ByteArrayInputStream(worker(url).getBytes("UTF-8"))
+	implicit def partialFunctionToTransport(f:PartialFunction[String,String]):Transport = {
+		new Transport {
+			override def get(url:String):java.io.InputStream = {
+				if (!f.isDefinedAt(url)) { fail("unexpected URL: " + url) }
+				new java.io.ByteArrayInputStream(f(url).getBytes("UTF-8"))
+			}
 		}
 	}
 
@@ -53,7 +55,7 @@ class FlickrTest extends FunSuite {
 			"3f85b72e715c123e97800aaa95d8b56e",
 			"2fd0efe09d4d3a6e",
 			None,
-			new MockTransport(Map(
+			Map(
 				"http://api.flickr.com/services/rest/?api_key=3f85b72e715c123e97800aaa95d8b56e&api_sig=12d4c3ea32aafd1f8675bdf2c7f40fb8&method=flickr.auth.getFrob"->
 				"""<?xml version="1.0" encoding="UTF-8"?>
 				<rsp stat="ok">
@@ -67,7 +69,7 @@ class FlickrTest extends FunSuite {
 					<perms>read</perms>
 					<user fullname="" username="tegla" nsid="10686481@N00"></user>
 				</auth>
-				</rsp>""")))
+				</rsp>"""))
 		
 		val frob = flickr.auth.getFrob()
 		frob should be ("72157622939479697-6776e136f19598ce-971749")
