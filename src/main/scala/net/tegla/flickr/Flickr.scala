@@ -46,6 +46,12 @@ trait CompareId[T <: HasId] extends HasId {
 	}
 }
 
+trait Paged {
+	def pages:Int
+	def page:Int
+	def total:Int 
+}
+
 final class Photoset(val elem:Elem) extends XMLResponseWrapper with CompareId[Photoset] {
 	def videos = attrib("videos").toInt
 	def photos = attrib("photos").toInt
@@ -85,11 +91,12 @@ final class Photo(val elem:Elem) extends XMLResponseWrapper with CompareId[Photo
 	def id = attrib("id").toLong
 }
 
-final class PhotosetList(val elem:Elem) extends WithChildren[Photo] {
+final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {
 	override def label = "photoset"
-	def total = attrib("total")
-	def pages = attrib("pages")
-	def per_page = attrib("per_page")
+	def total = attrib("total").toInt
+	def pages = attrib("pages").toInt
+	def per_page = attrib("per_page").toInt
+	def page = attrib("page").toInt
 	def ownername = attrib("ownername")
 	def owner = attrib("owner")
 	def primary = attrib("primary")
@@ -166,6 +173,13 @@ final class Flickr(
 		createURL0("auth", Map("frob" -> Some(frob), "perms" -> Some(perms)), true)
 	}
 
+	private def loadAllPages[CHILD, P <: Paged with Seq[CHILD]](loader:Int => P):Seq[CHILD] = {
+		val first = loader(1)	
+		val restRange = (2 until first.pages inclusive) // flickr API counts pages as [1...max]
+		val result = restRange.foldLeft(List() ++ first)(_++loader(_))
+		assert(result.length == first.total)
+		result	
+	}
 	// This subclass system ensures that we look very like the official Flickr API
 	abstract class Method[T] {
 		val method = {
@@ -213,6 +227,7 @@ final class Flickr(
 				"per_page" -> Some(per_page.toString),
 				"page" -> Some(page.toString)))
 			def result(e:Elem) = new PhotosetList(e)
+			def apply(method:Int => PhotosetList) = loadAllPages[Photo,PhotosetList](method)
 		}
 	}
 }
