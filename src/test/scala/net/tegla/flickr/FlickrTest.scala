@@ -85,12 +85,16 @@ class FlickrTest extends FunSuite {
 		val photo1 = new Photo(XML.loadString("""<photo id="1234"/>"""))
 		val photo2 = new Photo(XML.loadString("""<photo id="1234"/>"""))
 		val photo3 = new Photo(XML.loadString("""<photo id="12345"/>"""))
+		val photoset1 = new Photoset(XML.loadString("""<photoset id="1234"/>"""))
+		val photoset2 = new Photoset(XML.loadString("""<photoset id="1234"/>"""))
 
 		photo1 should have ('hashCode (photo2.hashCode))
 		photo1 should not have ('hashCode (photo3.hashCode))
 
 		photo1 should equal (photo2)
 		photo1 should not equal (photo3)
+		photoset1 should equal (photoset2)
+		photo1 should not equal (photoset1)
 	}
 }
 
