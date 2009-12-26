@@ -6,6 +6,9 @@ import scala.xml.XML
 
 import java.security.MessageDigest
 
+trait Transport {
+	def get(url:String):java.io.InputStream
+}
 
 final class Flickr(
 		val api_key:String,

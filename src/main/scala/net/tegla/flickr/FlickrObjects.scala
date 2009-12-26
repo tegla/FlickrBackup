@@ -2,10 +2,6 @@ package net.tegla.flickr
 
 import scala.xml.Elem
 
-trait Transport {
-	def get(url:String):java.io.InputStream
-}
-
 trait XMLResponseWrapper {
 	// every wrapper class name corresponds to one xml reply
 	// net.tegla.flickr.Photosets - <photosets/>
