@@ -35,9 +35,13 @@ trait HasId {
 
 trait CompareId[T <: HasId] extends HasId {
 	override def hashCode = id.hashCode
-	override def equals(other:Any) = other match {
-		case that:T => that.id == id
-		case _ => false
+	override def equals(other:Any) = {
+		if (other.isInstanceOf[HasId]) {
+			val that = other.asInstanceOf[HasId]
+			(this.getClass == that.getClass) && (this.id == that.id)
+		} else {
+			false
+		}
 	}
 }
 
