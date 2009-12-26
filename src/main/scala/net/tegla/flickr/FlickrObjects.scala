@@ -5,8 +5,8 @@ import scala.xml.Elem
 trait XMLResponseWrapper {
 	// every wrapper class name corresponds to one xml reply
 	// net.tegla.flickr.Photosets - <photosets/>
-	def label = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
-	assert(elem.label == label)
+	protected def elemlabel = this.getClass.getName.replaceFirst("net.tegla.flickr.","").toLowerCase
+	assert(elem.label == elemlabel)
 
 	val elem:Elem
 	protected def attrib(name:String) = (elem \ ("@" + name)) text
@@ -87,7 +87,7 @@ final class Photo(val elem:Elem) extends XMLResponseWrapper with CompareId[Photo
 }
 
 final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {
-	override def label = "photoset"
+	override def elemlabel = "photoset"
 	def total = attrib("total").toInt
 	def pages = attrib("pages").toInt
 	def per_page = attrib("per_page").toInt
@@ -107,4 +107,27 @@ final class Photos(val elem:Elem) extends Paged with WithChildren[Photo] {
 	def total = attrib("total").toInt
 	override def createChild(elem:Elem) = new Photo(elem)
 	override def childElemName = "photo"
+}
+
+final class Size(val elem:Elem) extends XMLResponseWrapper {
+	def media = attrib("media")
+	def url = attrib("url")
+	def source = attrib("source")
+	def height = attrib("height").toInt
+	def width = attrib("width").toInt
+	def label = attrib("label")
+}
+
+final class Sizes(val elem:Elem) extends scala.collection.MapProxy[String, Size]
+                                 with XMLResponseWrapper {
+	def candownload = attrib("candownload") == "1"
+	def canprint = attrib("canprint") == "1"
+	def canblog = attrib("canblog") == "1"
+
+	private lazy val nodeMap = Map() ++ (
+		(elem \ "size").
+			map(n => new Size(n.asInstanceOf[Elem])).
+			map(s => (s.label,s))
+	)
+	def self = nodeMap
 }

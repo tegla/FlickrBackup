@@ -127,6 +127,11 @@ final class Flickr(
 			def apply():Seq[Photo] = apply({i:Int => apply(100, i)})
 			def result(e:Elem) = new Photos(e)
 		}
+		object getSizes extends Method[Sizes] {
+			def apply(photo_id:Long):Sizes = call(Map("photo_id"->Some(photo_id.toString)))
+			def apply(photo:Photo):Sizes = apply(photo.id)
+			def result(e:Elem) = new Sizes(e)
+		}
 	}
 
 	object photosets {
@@ -144,6 +149,10 @@ final class Flickr(
 			def result(e:Elem) = new PhotosetList(e)
 			def apply(method:Int => PhotosetList) = loadAllPages[Photo,PhotosetList](method)
 			def apply(photoset_id:Long):Seq[Photo] = apply({i:Int => apply(photoset_id, 100, i)})
+		}
+		object getInfo extends Method[Photoset] {
+			def apply(photoset_id:Long) = call(Map("photoset_id"->Some(photoset_id.toString)))
+			def result(e:Elem) = new Photoset(e)
 		}
 	}
 }
