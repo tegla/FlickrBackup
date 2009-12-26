@@ -106,6 +106,14 @@ final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {
 	override def childElemName = "photo"
 }
 
+final class Photos(val elem:Elem) extends Paged with WithChildren[Photo] {
+	def page = attrib("page").toInt
+	def pages = attrib("pages").toInt
+	def total = attrib("total").toInt
+	override def createChild(elem:Elem) = new Photo(elem)
+	override def childElemName = "photo"
+}
+
 final class Flickr(
 		val api_key:String,
 		val secret:String,
@@ -214,6 +222,17 @@ final class Flickr(
 		}
 	}
 
+	object photos {
+		object getNotInSet extends Method[Photos] {
+			def apply(per_page:Int, page:Int) = call(Map(
+				"per_page" -> Some(per_page.toString),
+				"page" -> Some(page.toString)))
+			def apply(method:Int => Photos) = loadAllPages[Photo,Photos](method)
+			def apply():Seq[Photo] = apply({i:Int => apply(100, i)})
+			def result(e:Elem) = new Photos(e)
+		}
+	}
+
 	object photosets {
 		object getList extends Method[Photosets] {
 			def apply() = call(Map())
@@ -228,6 +247,7 @@ final class Flickr(
 				"page" -> Some(page.toString)))
 			def result(e:Elem) = new PhotosetList(e)
 			def apply(method:Int => PhotosetList) = loadAllPages[Photo,PhotosetList](method)
+			def apply(photoset_id:Long):Seq[Photo] = apply({i:Int => apply(photoset_id, 100, i)})
 		}
 	}
 }

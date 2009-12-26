@@ -3,12 +3,17 @@ package net.tegla.flickr
 object HelloWorld { 
 	def main(args: Array[String]) {
 		val flickr = Flickr.ProbaApp
-		val mikulas = 72157610703221265L
-		val getPage = flickr.photosets.getPhotos(mikulas, 10, _:Int)
-		val all = flickr.photosets.getPhotos(getPage)
-		for(photo <- all) {
-			println(photo.title)
+
+		var all = new scala.collection.mutable.HashSet[Photo]
+		for(photoset <- flickr.photosets.getList())
+		for(photo <- flickr.photosets.getPhotos(photoset.id)) {
+			println(photo)
+			all+=photo
 		}
-		println("total: " + all.length)
+		for ( photo <- flickr.photos.getNotInSet() ) {
+			println(photo)
+			all+=photo
+		}
+		println("total: " + all.size)
 	}
 }
