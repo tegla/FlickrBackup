@@ -1,9 +1,26 @@
 package net.tegla.flickr
 
 object SavePhotoset {
-	def download(source:String, target:java.io.File) {
-		println(source)
-		println(target)
+	def download(source:String, target:java.io.File, tmp:java.io.File) {
+		print("Downloading " + source +" ")
+		val inputStream = new java.net.URL(source).openStream
+		try {
+			val outputStream = new java.io.FileOutputStream(tmp)
+			val bytes = new Array[Byte](4096)
+			var i = inputStream.read(bytes)
+			while(i > 0) {
+				print(".")
+				outputStream.write(bytes, 0, i)
+				i = inputStream.read(bytes)
+			}
+			outputStream.close()
+			tmp.renameTo(target)
+			println
+			println("Written as: " + target)
+		} finally {
+			inputStream.close()
+			tmp.delete()
+		}
 	}
 
 	def main(args : Array[String]) : Unit = {
@@ -25,7 +42,8 @@ object SavePhotoset {
 		photos.foreach { photo =>
 			val target = new java.io.File(target_dir, "%05d.jpg".format(i))
 			val source = flickr.photos.getSizes(photo)("Large").source
-			download(source, target)
+			val tmp = new java.io.File(target_dir, "%05d.jpg.downloading".format(i))
+			download(source, target, tmp)
 			i += 1
 		}
 	}
