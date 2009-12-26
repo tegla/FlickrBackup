@@ -3,3 +3,5 @@ lib_managed
 project/build/target
 *.swp
 project/boot
+.manager/
+bin/
