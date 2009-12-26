@@ -14,15 +14,12 @@ trait XMLResponseWrapper {
 	override def toString = elem.toString
 }
 
-trait WithChildren[CHILD] extends Seq[CHILD] with XMLResponseWrapper {
+trait WithChildren[CHILD] extends SeqProxy[CHILD] with XMLResponseWrapper {
 	protected def createChild(elem:Elem):CHILD
 	protected def childElemName:String
 
-	// is there a SeqProxy trait?
-	lazy val seq = (elem \ childElemName).map( n => createChild(n.asInstanceOf[Elem]) )
-	def length = seq.length
-	def elements = seq.elements
-	def apply(i:Int) = seq.apply(i)
+	private lazy val seq = (elem \ childElemName).map( n => createChild(n.asInstanceOf[Elem]) )
+	def self = seq
 }
 
 trait HasId {
