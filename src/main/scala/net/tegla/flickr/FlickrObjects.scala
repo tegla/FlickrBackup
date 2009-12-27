@@ -50,7 +50,7 @@ final class Photoset(val elem:Elem) extends XMLResponseWrapper with CompareId[Ph
 	def farm = attrib("farm").toInt
 	def server = attrib("server").toInt
 	def secret = attrib("secret")
-	def primary = attrib("primary")
+	def primary = attrib("primary").toLong
 	def id = attrib("id").toLong
 	def title = child("title")
 	def description = child("description")

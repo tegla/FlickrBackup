@@ -40,4 +40,18 @@ class FlickrObjectTest extends FunSuite {
 		photo1 should not equal (photoset1)
 	}
 
+	test("Photoset from photosets") {
+		val photoset = new Photoset(XML.loadString(
+			"""<photoset videos="0" photos="42" farm="3" server="2207" secret="9999999999" primary="1638510036" id="72157602576373121">
+				<title>2007.09.30. Schaffhausen</title>
+				<description></description>
+			</photoset>"""))
+		photoset should have ('videos (0))
+		photoset should have ('photos (42))
+		photoset should have ('farm (3))
+		photoset should have ('server (2207))
+		photoset should have ('secret ("9999999999"))
+		photoset should have ('primary (1638510036L))
+		photoset should have ('id (72157602576373121L))
+	}
 }
