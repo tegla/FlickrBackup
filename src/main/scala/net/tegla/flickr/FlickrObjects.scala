@@ -74,13 +74,34 @@ final class Auth(val elem:Elem) extends XMLResponseWrapper {
 	def user = new User((elem \ "user").first.asInstanceOf[Elem])
 }
 
-final class Photo(val elem:Elem) extends XMLResponseWrapper with CompareId[Photo] {
+class Photo(val elem:Elem) extends XMLResponseWrapper with CompareId[Photo] {
 	def isprimary = attrib("isprimary") == "1"
 	def title = attrib("title")
 	def farm = attrib("farm").toInt
 	def server = attrib("server").toInt
 	def secret = attrib("secret")
 	def id = attrib("id").toLong
+}
+
+final class Visibility(val elem:Elem) extends XMLResponseWrapper {
+	def isfamily = attrib("isfamily") == "1"
+	def isfriend = attrib("isfriend") == "1"
+	def ispublic = attrib("ispublic") == "1"
+}
+
+final class Dates(val elem:Elem) extends XMLResponseWrapper {
+	private lazy val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
+	lazy val lastupdate = new java.util.Date(attrib("lastupdate").toLong * 1000L)
+	lazy val posted = new java.util.Date(attrib("posted").toLong * 1000L)
+	lazy val taken = dateFormat.parse(attrib("taken") + " UTC")
+}
+
+final class PhotoInfo(elem:Elem) extends Photo(elem) {
+	override val elemlabel = "photo"
+	override def title = child("title") // not attrib !!!
+	def description = child("description")
+	lazy val visibility = new Visibility((elem \ "visibility").first.asInstanceOf[Elem])
+	lazy val dates = new Dates((elem \ "dates").first.asInstanceOf[Elem])
 }
 
 final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {

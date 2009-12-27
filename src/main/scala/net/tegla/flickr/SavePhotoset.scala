@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URL
 
 object SavePhotoset {
-	def download(source: URL, target:java.io.File) {
+	def download(source: URL, target:java.io.File, taken:java.util.Date) {
 		print("Downloading " + source +" ")
 		val inputStream = source.openStream
 		val tmp = new File(target.toString + ".download")
@@ -18,6 +18,7 @@ object SavePhotoset {
 				i = inputStream.read(bytes)
 			}
 			outputStream.close()
+			tmp.setLastModified(taken.getTime)
 			tmp.renameTo(target)
 			println
 			println("Written as  " + target)
@@ -118,8 +119,9 @@ object SavePhotoset {
 		for((nr,id) <- commands.downloadIds) {
 			val file = new File(target_dir, toImageFile(nr,id))
 			val source = new java.net.URL(flickr.photos.getSizes(id)("Large").source)
+			val taken = flickr.photos.getInfo(id).dates.taken
 			println("Downloading " + file + " to " + source)
-			download(source, file)
+			download(source, file, taken)
 		}
 	}
 }

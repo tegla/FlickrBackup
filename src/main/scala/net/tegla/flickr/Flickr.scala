@@ -132,6 +132,14 @@ final class Flickr(
 			def apply(photo:Photo):Sizes = apply(photo.id)
 			def result(e:Elem) = new Sizes(e)
 		}
+		object getInfo extends Method[PhotoInfo] {
+			def apply(photo_id:Long, secret:Option[String]) = call(Map(
+				"photo_id"->Some(photo_id.toString),
+				"secret"->secret))
+			def apply(photo_id:Long):PhotoInfo = apply(photo_id, None)
+			def apply(photo:Photo):PhotoInfo = apply(photo.id)
+			def result(e:Elem) = new PhotoInfo(e)
+		}
 	}
 
 	object photosets {
