@@ -71,4 +71,28 @@ class FlickrObjectTest extends FunSuite {
 		photoset should have ('primary (1638510036L))
 		photoset should have ('id (72157602576373121L))
 	}
+
+	test("Sizes") {
+		val sizes = new Sizes(XML.loadString(
+			"""<sizes candownload="1" canprint="1" canblog="1">
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/sq/" source="http://farm3.static.flickr.com/2260/1638461734_9ec8669f35_s.jpg" height="75" width="75" label="Square"></size>
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/t/" source="http://farm3.static.flickr.com/2260/1638461734_9ec8669f35_t.jpg" height="75" width="100" label="Thumbnail"></size>
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/s/" source="http://farm3.static.flickr.com/2260/1638461734_9ec8669f35_m.jpg" height="179" width="240" label="Small"></size>
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/m/" source="http://farm3.static.flickr.com/2260/1638461734_9ec8669f35.jpg" height="373" width="500" label="Medium"></size>
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/l/" source="http://farm3.static.flickr.com/2260/1638461734_9ec8669f35_b.jpg" height="763" width="1024" label="Large"></size>
+				<size media="photo" url="http://www.flickr.com/photos/10686481@N00/1638461734/sizes/o/" source="http://farm3.static.flickr.com/2260/1638461734_4340d0a3df_o.jpg" height="1920" width="2576" label="Original"></size>
+			</sizes>"""))
+		sizes should have ('candownload (true))
+		sizes should have ('canprint (true))
+		sizes should have ('canblog (true))
+		val keyset = Set() ++ sizes.keySet
+		keyset should be (Set("Square","Thumbnail","Small","Medium","Large","Original"))
+		val large = sizes("Large")
+		large should have ('label ("Large"))
+		large should have ('media ("photo"))
+		large should have ('url ("http://www.flickr.com/photos/10686481@N00/1638461734/sizes/l/"))
+		large should have ('source ("http://farm3.static.flickr.com/2260/1638461734_9ec8669f35_b.jpg"))
+		large should have ('height (763))
+		large should have ('width (1024))
+	}
 }
