@@ -32,6 +32,13 @@ object SavePhotoset {
 
 	// figure out what files need deleting, renaming or downloading.
 	// return this info as a triplet, but don't actually DO anything
+	case class Commands(val deleteFiles:List[String],
+	                    val moveFiles:Map[String,String],
+	                    val downloadIds:Map[Int,Long])
+	{
+		def isEmpty = deleteFiles.isEmpty && moveFiles.isEmpty && downloadIds.isEmpty
+	}
+
 	def resolve(dirlist:Collection[String], ids:Seq[Long]) = {
 		// for the current file listing, create a photo id->nr map
 		val current:Map[Long,Int] = Map() ++ (for {
@@ -46,9 +53,9 @@ object SavePhotoset {
 			ids.toList.zipWithIndex.map { p => (p._1, p._2+1) } // we count from 1
 
 		// what needs deleting? Create a list of files
-		val deleteFiles = for {
+		val deleteFiles = List() ++ (for {
 			id <- current.keySet
-			if !(target isDefinedAt id) } yield toImageFile(current(id), id)
+			if !(target isDefinedAt id) } yield toImageFile(current(id), id))
 
 		// what needs moving? Create a map of (old name, new name) pairs
 		// (I do remember a "lift" somewhere, but I cannot find it anymore)
@@ -65,7 +72,7 @@ object SavePhotoset {
 			if !(current isDefinedAt id) }
 			yield (nr, id))
 
-		(deleteFiles, moveFiles, downloadIds)
+		Commands(deleteFiles, moveFiles, downloadIds)
 	}
 
 	def main(args : Array[String]) : Unit = {
@@ -88,27 +95,27 @@ object SavePhotoset {
 			println("Getting info for image " + id)
 			flickr.photos.getSizes(id)("Large").source
 		}
-		val (deleteFiles, moveFiles, downloadIds) = resolve(dirlist, ids)
+		val commands = resolve(dirlist, ids)
 
-		if (deleteFiles.isEmpty && moveFiles.isEmpty && downloadIds.isEmpty) {
+		if (commands.isEmpty) {
 			println("Nothing to do.")
 			return
 		}
 
-		for(fileName <- deleteFiles) {
+		for(fileName <- commands.deleteFiles) {
 			val file = new File(target_dir, fileName)
 			println("Deleting    " + file)
 			file.delete
 		}
 
-		for((from,to) <- moveFiles) {
+		for((from,to) <- commands.moveFiles) {
 			val fromFile = new File(target_dir, from)
 			val toFile = new File(target_dir, to)
 			println("Renaming    " + fromFile + " to " + toFile)
 			fromFile.renameTo(toFile)
 		}
 
-		for((nr,id) <- downloadIds) {
+		for((nr,id) <- commands.downloadIds) {
 			val file = new File(target_dir, toImageFile(nr,id))
 			val source = new java.net.URL(flickr.photos.getSizes(id)("Large").source)
 			println("Downloading " + file + " to " + source)
