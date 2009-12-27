@@ -54,4 +54,21 @@ class FlickrObjectTest extends FunSuite {
 		photoset should have ('primary (1638510036L))
 		photoset should have ('id (72157602576373121L))
 	}
+
+	test("Photoset from getPhotos") {
+		val photoset = new PhotosetList(XML.loadString(
+			"""<photoset total="42" pages="5" perpage="10" per_page="10" page="1" ownername="tegla" owner="10686481@N00" primary="1638510036" id="72157602576373121">
+				<photo isprimary="0" title="HPIM1165.JPG" farm="3" server="2230" secret="9999999999" id="1638384240"></photo>
+				<photo isprimary="0" title="HPIM1166.JPG" farm="3" server="2180" secret="9999999999" id="1637516201"></photo>
+			</photoset>"""))
+		photoset should have ('length (2))
+		photoset(0) should have ('id (1638384240L))
+		photoset(1) should have ('id (1637516201L))
+		photoset should have ('pages (5))
+		photoset should have ('page (1))
+		photoset should have ('ownername ("tegla"))
+		photoset should have ('owner ("10686481@N00"))
+		photoset should have ('primary (1638510036L))
+		photoset should have ('id (72157602576373121L))
+	}
 }

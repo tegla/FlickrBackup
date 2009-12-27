@@ -112,7 +112,7 @@ final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {
 	def page = attrib("page").toInt
 	def ownername = attrib("ownername")
 	def owner = attrib("owner")
-	def primary = attrib("primary")
+	def primary = attrib("primary").toLong
 	def id = attrib("id").toLong
 
 	override def createChild(elem:Elem) = new Photo(elem)
