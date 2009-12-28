@@ -1,4 +1,4 @@
-package net.tegla.flickr
+package net.tegla.flickr.examples
 
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers

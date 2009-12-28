@@ -1,7 +1,7 @@
-package net.tegla.flickr
+package net.tegla.flickr.examples
 
-import java.io.File
 import java.net.URL
+import java.io.File
 
 object SavePhotoset {
 	def download(source: URL, target:java.io.File, taken:java.util.Date) {
