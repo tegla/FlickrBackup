@@ -102,6 +102,7 @@ final class PhotoInfo(elem:Elem) extends Photo(elem) {
 	def description = child("description")
 	lazy val visibility = new Visibility((elem \ "visibility").first.asInstanceOf[Elem])
 	lazy val dates = new Dates((elem \ "dates").first.asInstanceOf[Elem])
+	def rotation = attrib("rotation").toInt
 }
 
 final class PhotosetList(val elem:Elem) extends Paged with WithChildren[Photo] {

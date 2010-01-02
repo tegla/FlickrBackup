@@ -4,7 +4,7 @@ import java.net.URL
 import java.io.File
 
 object SavePhotoset {
-	def download(source: URL, target:java.io.File, taken:java.util.Date) {
+	def download(source: URL, rotation:Int, target:java.io.File, taken:java.util.Date) {
 		print("Downloading " + source +" ")
 		val inputStream = source.openStream
 		val tmp = new File(target.toString + ".download")
@@ -18,9 +18,25 @@ object SavePhotoset {
 				i = inputStream.read(bytes)
 			}
 			outputStream.close()
-			tmp.setLastModified(taken.getTime)
-			tmp.renameTo(target)
-			println
+			println("rotation = %d".format(rotation))
+			if (rotation == 0) {
+				tmp.setLastModified(taken.getTime)
+				tmp.renameTo(target)
+			} else {
+				val command = Array[String]() ++ List(
+					"jpegtran",
+					"-rotate", rotation.toString,
+					"-outfile", target.toString,
+					tmp.toString
+				)
+				println("Rotating %d degrees".format(rotation))
+				val process = java.lang.Runtime.getRuntime().exec(command)
+				process.waitFor()
+				if (process.exitValue() != 0) {
+					throw new RuntimeException("Process returned " + process.exitValue())
+				}
+				target.setLastModified(taken.getTime)
+			}
 			println("Written as  " + target)
 		} finally {
 			inputStream.close()
@@ -78,6 +94,7 @@ object SavePhotoset {
 
 	def main(args : Array[String]) : Unit = {
 		val photoset_id = args(0).toLong
+		val size = args(1)
 		val flickr = Flickr.ProbaApp
 		val pwd = new File(System.getProperty("user.dir"))
 
@@ -118,10 +135,12 @@ object SavePhotoset {
 
 		for((nr,id) <- commands.downloadIds) {
 			val file = new File(target_dir, toImageFile(nr,id))
-			val source = new java.net.URL(flickr.photos.getSizes(id)("Large").source)
-			val taken = flickr.photos.getInfo(id).dates.taken
-			println("Downloading " + file + " to " + source)
-			download(source, file, taken)
+			val source = new java.net.URL(flickr.photos.getSizes(id)(size).source)
+			val info = flickr.photos.getInfo(id)
+			val taken = info.dates.taken
+			val rotation = if (size == "Original") info.rotation else 0
+			println(info)
+			download(source, rotation, file, taken)
 		}
 	}
 }
