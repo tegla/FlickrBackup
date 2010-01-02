@@ -18,7 +18,7 @@ object SavePhotoset {
 				i = inputStream.read(bytes)
 			}
 			outputStream.close()
-			println("rotation = %d".format(rotation))
+			println
 			if (rotation == 0) {
 				tmp.setLastModified(taken.getTime)
 				tmp.renameTo(target)
@@ -139,7 +139,6 @@ object SavePhotoset {
 			val info = flickr.photos.getInfo(id)
 			val taken = info.dates.taken
 			val rotation = if (size == "Original") info.rotation else 0
-			println(info)
 			download(source, rotation, file, taken)
 		}
 	}
